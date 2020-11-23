@@ -172,7 +172,7 @@ class DrupalDefaultEntityController implements DrupalEntityControllerInterface {
     // were passed. The $ids array is reduced as items are loaded from cache,
     // and we need to know if it's empty for this reason to avoid querying the
     // database when all requested entities are loaded from cache.
-    $passed_ids = !empty($ids) ? array_flip(array_filter($ids)) : FALSE;
+    $passed_ids = !empty($ids) ? array_flip($ids) : FALSE;
     // Try to load entities from the static cache, if the entity type supports
     // static caching.
     if ($this->cache && !$revision_id) {
@@ -305,7 +305,7 @@ class DrupalDefaultEntityController implements DrupalEntityControllerInterface {
 
       // Remove all fields from the base table that are also fields by the same
       // name in the revision table.
-      $entity_field_keys = array_flip(array_filter($entity_fields));
+      $entity_field_keys = array_flip($entity_fields);
       foreach ($entity_revision_fields as $key => $name) {
         if (isset($entity_field_keys[$name])) {
           unset($entity_fields[$entity_field_keys[$name]]);
@@ -385,7 +385,7 @@ class DrupalDefaultEntityController implements DrupalEntityControllerInterface {
     // Load any available entities from the internal cache.
     if (!empty($this->entityCache)) {
       if ($ids) {
-        $entities += array_intersect_key($this->entityCache, array_flip(array_filter($ids)));
+        $entities += array_intersect_key($this->entityCache, array_flip($ids));
       }
       // If loading entities only by conditions, fetch all available entities
       // from the cache. Entities which don't match are removed later.

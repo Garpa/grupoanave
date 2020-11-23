@@ -1368,8 +1368,8 @@ function image_effect_apply($image, $effect) {
 function theme_image_style($variables) {
   // Determine the dimensions of the styled image.
   $dimensions = array(
-    'width' => isset($variables['width']) ? $variables['width'] : NULL,
-    'height' => isset($variables['height']) ? $variables['height'] : NULL,
+    'width' => $variables['width'],
+    'height' => $variables['height'],
   );
 
   image_style_transform_dimensions($variables['style_name'], $dimensions);
