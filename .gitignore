@@ -13,4 +13,6 @@ sites/*/private
 # Ignore webserver logs folder
 /logs
 /dumps
+Gemfile.lock
+misc/jquery.js
 
