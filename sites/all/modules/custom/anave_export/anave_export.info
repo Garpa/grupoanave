@@ -1,0 +1,5 @@
+name = Anave Export
+description = "Adds hook_menu funtionality for export info"
+package = "Grupo Anave"
+version = VERSION
+core = 7.x
