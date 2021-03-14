@@ -7,3 +7,4 @@
  * Required elements.
  */
 include_once 'inc/menu.inc';
+include_once 'inc/theme.inc';
