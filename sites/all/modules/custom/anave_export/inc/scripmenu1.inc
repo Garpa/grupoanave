@@ -1,16 +1,13 @@
 <?php
-require_once('scripmenu1.inc');
-require_once('scripmenu2.inc');
-require_once('scripmenu3.inc');
 /**
  * @file
- * This file has all functionality related to menu pages.
+ * This file has scrip agustin
  */
 
 /**
  * Implements hook_menu().
  */
-/*
+
 function anave_export_menu() {
   $items = array();
 
@@ -23,11 +20,11 @@ function anave_export_menu() {
 
   return $items;
 }
-/*
+
 /**
  * Export Main Page.
  */
-/*
+
 function anave_export_get_nodes() {
   drupal_set_title('Export Nodes');
   // Links.
@@ -38,9 +35,6 @@ function anave_export_get_nodes() {
   foreach ($nodes as $key => $node) {
     $nodeFields = array();
   //fields policy
-
-  //  $field_poliza_oficina = isset($node->field_poliza_oficina) ?
-  //    $node->field_poliza_oficina['und'][0]['value'] : "";
 
     $field_poliza_emision = isset($node->field_poliza_emision) ?
       $node->field_poliza_emision['und'][0]['value'] : "";
@@ -57,23 +51,12 @@ function anave_export_get_nodes() {
     $field_poliza_moneda = isset($node->field_poliza_moneda) ?
       $node->field_poliza_moneda['und'][0]['value'] : "";
 
-  //fields user
-
-  //  $field_asignar_promotor = isset($node->field_asignar_promotor) ?
-  //    $node->field_asignar_promotor['und'][0]['value'] : "";
-
   //fields insured
     $field_asegurado_nombre = isset($node->field_asegurado_nombre) ?
       $node->field_asegurado_nombre['und'][0]['value'] : "";
 
-  //  $field_asegurado_io = isset($node->field_asegurado_io) ?
-  //    $node->field_asegurado_io['und'][0]['value'] : "";
-
     $field_asegurado_rfc = isset($node->field_asegurado_rfc) ?
       $node->field_asegurado_rfc['und'][0]['value'] : "";
-
-  // $field_asegurado_domicilio = isset($node->field_asegurado_domicilio) ?
-  //   $node->field_asegurado_domicilio['und'][0]['value'] : "";
 
     $field_asegurado_telefono = isset($node->field_asegurado_telefono) ?
       $node->field_asegurado_telefono['und'][0]['value'] : "";
@@ -110,9 +93,6 @@ function anave_export_get_nodes() {
     $field_vehiculo_servicio = isset($node->field_vehiculo_servicio) ?
       $node->field_vehiculo_servicio['und'][0]['value'] : "";
 
-  //  $field_uso_vehiculo = isset($node->field_uso_vehiculo) ?
-  //    $node->field_uso_vehiculo['und'][0]['value'] : "";
-
     $field_vehiculo_tonelaje = isset($node->field_vehiculo_tonelaje) ?
       $node->field_vehiculo_tonelaje['und'][0]['value'] : "";
 
@@ -134,9 +114,6 @@ function anave_export_get_nodes() {
 
     $field_poliza_status = isset($node->field_poliza_status) ?
       $node->field_poliza_status['und'][0]['value'] : "";
-
-    //$field_ficha_de_pago = isset($node->field_ficha_de_pago) ?
-      //$node->field_ficha_de_pago['und'][0]['value'] : "";
 
     $field_fecha_de_pagado = isset($node->field_fecha_de_pagado) ?
       $node->field_fecha_de_pagado['und'][0]['value'] : "";
@@ -176,14 +153,7 @@ function anave_export_get_nodes() {
 //fields general policy
     $field_poliza_reduccion = isset($node->field_poliza_reduccion) ?
       $node->field_poliza_reduccion['und'][0]['value'] : "";
-
-//fields validity
-//    $field_poliza_rgo_pago_fracc = isset($node->field_poliza_rgo_pago_fracc) ?
-//      $node->field_poliza_rgo_pago_fracc['und'][0]['value'] : "";
-
-  //$node = node_load(12); // random NID
-  //$field_output = field_view_field('node', $field_asignar_promotor, 'field_entity_reference', array('type' => 'entity'));
-  //var_dump($node);
+//var_dump($node);
 
 //fields policy
 
@@ -194,14 +164,9 @@ function anave_export_get_nodes() {
   array_push($nodeFields, $field_poliza_forma_pago);
   array_push($nodeFields, $field_poliza_moneda);
 
-//fields user
-  //  array_push($nodeFields, $field_asignar_promotor);
-
 //fields insured
  array_push($nodeFields, $field_asegurado_nombre);
- //array_push($nodeFields, $field_asegurado_io);
  array_push($nodeFields, $field_asegurado_rfc);
-// array_push($nodeFields, $field_asegurado_domicilio);
  array_push($nodeFields, $field_asegurado_telefono);
  array_push($nodeFields, $field_asegurado_benef_pref);
 
@@ -215,7 +180,6 @@ function anave_export_get_nodes() {
  array_push($nodeFields, $field_vehiculo_placas);
  array_push($nodeFields, $field_vehiculo_capacidad);
  array_push($nodeFields, $field_vehiculo_servicio);
- //array_push($nodeFields, $field_uso_vehiculo);
  array_push($nodeFields, $field_vehiculo_tonelaje);
  array_push($nodeFields, $field_vehiculo_tipo_carga);
  array_push($nodeFields, $field_vehiculo_descripcion_carga);
@@ -225,7 +189,6 @@ function anave_export_get_nodes() {
  //fields status
  array_push($nodeFields, $field_periodo_de_gracia);
  array_push($nodeFields, $field_poliza_status);
-//array_push($nodeFields, $field_ficha_de_pago);
  array_push($nodeFields, $field_fecha_de_pagado);
  array_push($nodeFields, $field_fecha_de_cancelacion);
 
@@ -244,9 +207,6 @@ function anave_export_get_nodes() {
 
 //fields general policy
 array_push($nodeFields, $field_poliza_reduccion);
-
-//fields validity
-//array_push($nodeFields, $field_poliza_rgo_pago_fracc);
 
     array_push($output, array($node->nid => $nodeFields));
 
