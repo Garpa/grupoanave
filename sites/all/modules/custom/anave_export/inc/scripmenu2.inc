@@ -39,7 +39,7 @@
   count($node->field_asignar_promotor) > 0?
   $node->field_asignar_promotor['und']: "";
 
- //Comando para corroborar que existan datos dentro del campo mencionado
+ // Comando para corroborar que existan datos dentro del campo mencionado
    //********************
    //var_dump($node->field_asignar_promotor
    //********************
