@@ -32,7 +32,7 @@ function anave_export_get_nodes() {
 
   $loop = 0;
   foreach ($nodes as $key => $node) {
-  $nodeFields = array();
+    $nodeFields = array();
 
     require 'scripmenu1.inc';
     require 'scripmenu2.inc';

@@ -1,9 +1,10 @@
 <?php
 
 /**
-* @file
-* This file has scrip Alexa.
-*/
+  * @file
+  * This file has scrip Alexa.
+  */
+
   $field_vehiculo_serie = isset($node->field_vehiculo_serie) ?
     $node->field_vehiculo_serie["und"][0]["value"] : "";
 
