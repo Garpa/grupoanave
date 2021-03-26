@@ -1,5 +1,5 @@
 <?php
-
+require_once('scripmenu2.inc');
 /**
  * @file
  * This file has all functionality related to menu pages.
@@ -35,9 +35,8 @@ function anave_export_get_nodes() {
     $nodeFields = array();
 
     //fields policy
-
     $field_poliza_oficina = isset($node->field_poliza_oficina) ?
-      $node->field_poliza_oficina['und'][0]['value'] : "";
+    $node->field_poliza_oficina['und'][0]['value'] : "";
 
     $field_poliza_emision = isset($node->field_poliza_emision) ?
       $node->field_poliza_emision['und'][0]['value'] : "";
@@ -54,30 +53,19 @@ function anave_export_get_nodes() {
     $field_poliza_moneda = isset($node->field_poliza_moneda) ?
       $node->field_poliza_moneda['und'][0]['value'] : "";
 
-  //fields user
-
-  //  $field_asignar_promotor = isset($node->field_asignar_promotor) ?
-  //    $node->field_asignar_promotor['und'][0]['value'] : "";
 
   //fields insured
     $field_asegurado_nombre = isset($node->field_asegurado_nombre) ?
       $node->field_asegurado_nombre['und'][0]['value'] : "";
 
-  //  $field_asegurado_io = isset($node->field_asegurado_io) ?
-  //    $node->field_asegurado_io['und'][0]['value'] : "";
-
     $field_asegurado_rfc = isset($node->field_asegurado_rfc) ?
       $node->field_asegurado_rfc['und'][0]['value'] : "";
-
-  // $field_asegurado_domicilio = isset($node->field_asegurado_domicilio) ?
-  //   $node->field_asegurado_domicilio['und'][0]['value'] : "";
 
     $field_asegurado_telefono = isset($node->field_asegurado_telefono) ?
       $node->field_asegurado_telefono['und'][0]['value'] : "";
 
     $field_asegurado_benef_pref = isset($node->field_asegurado_benef_pref) ?
       $node->field_asegurado_benef_pref['und'][0]['value'] : "";
-
 
   //fields vehicle
     $field_vehiculo_modelo = isset($node->field_vehiculo_modelo) ?
@@ -107,9 +95,6 @@ function anave_export_get_nodes() {
     $field_vehiculo_servicio = isset($node->field_vehiculo_servicio) ?
       $node->field_vehiculo_servicio['und'][0]['value'] : "";
 
-  //  $field_uso_vehiculo = isset($node->field_uso_vehiculo) ?
-  //    $node->field_uso_vehiculo['und'][0]['value'] : "";
-
     $field_vehiculo_tonelaje = isset($node->field_vehiculo_tonelaje) ?
       $node->field_vehiculo_tonelaje['und'][0]['value'] : "";
 
@@ -131,9 +116,6 @@ function anave_export_get_nodes() {
 
     $field_poliza_status = isset($node->field_poliza_status) ?
       $node->field_poliza_status['und'][0]['value'] : "";
-
-    //$field_ficha_de_pago = isset($node->field_ficha_de_pago) ?
-      //$node->field_ficha_de_pago['und'][0]['value'] : "";
 
     $field_fecha_de_pagado = isset($node->field_fecha_de_pagado) ?
       $node->field_fecha_de_pagado['und'][0]['value'] : "";
@@ -174,23 +156,51 @@ function anave_export_get_nodes() {
     $field_poliza_reduccion = isset($node->field_poliza_reduccion) ?
       $node->field_poliza_reduccion['und'][0]['value'] : "";
 
-//fields validity
-//    $field_poliza_rgo_pago_fracc = isset($node->field_poliza_rgo_pago_fracc) ?
-//      $node->field_poliza_rgo_pago_fracc['und'][0]['value'] : "";
+//fields term references
+  $field_plz_vehiculo_marca = isset($node->field_plz_vehiculo_marca) &&
+  count($node->field_plz_vehiculo_marca) !=0?
+  $node->field_plz_vehiculo_marca['und']: "";
 
-//var_dump($field_poliza_rgo_pago_fracc);
+  $field_vehiculo_submarca	= isset($node->field_vehiculo_submarca) &&
+  count($node->field_vehiculo_submarca) !=0?
+  $node->field_vehiculo_submarca['und']: "";
 
+  $field_vehiculo_descripcion	= isset($node->field_vehiculo_descripcion	) &&
+  count($node->field_vehiculo_descripcion	) !=0?
+  $node->field_vehiculo_descripcion['und']: "";
+
+  $field_vehiculo_carroceria_select	= isset($node->field_vehiculo_carroceria_select) &&
+  count($node->field_vehiculo_carroceria_select) > 0?
+  $node->field_vehiculo_carroceria_select['und']: "";
+
+  $field_motivos_de_cancelacion	= isset($node->field_motivos_de_cancelacion) &&
+  count($node->field_motivos_de_cancelacion) > 0?
+  $node->field_motivos_de_cancelacion['und']: "";
+
+  //Fields Entity References
+    $field_usuario_de_pagado = isset($node->field_usuario_de_pagado) &&
+    count($node->field_usuario_de_pagado) > 0?
+    $node->field_usuario_de_pagado['und']: "";
+
+    $field_usuario_de_cancelado = isset($node->field_usuario_de_cancelado) &&
+    count($node->field_usuario_de_cancelado) > 0?
+    $node->field_usuario_de_cancelado['und']: "";
+
+    $field_asignar_promotor = isset($node->field_asignar_promotor) &&
+    count($node->field_asignar_promotor) > 0?
+    $node->field_asignar_promotor['und']: "";
+
+//Comando para corroborar que existan datos dentro del campo mencionado
+  //********************
+    //var_dump($node->field_asignar_promotor
+  //********************
 //fields policy
-
   array_push($nodeFields, $field_poliza_oficina);
   array_push($nodeFields, $field_poliza_emision);
   array_push($nodeFields, $field_poliza_vigencia);
   array_push($nodeFields, $field_poliza_coberturas);
   array_push($nodeFields, $field_poliza_forma_pago);
   array_push($nodeFields, $field_poliza_moneda);
-
-//fields user
-  //  array_push($nodeFields, $field_asignar_promotor);
 
 //fields insured
  array_push($nodeFields, $field_asegurado_nombre);
@@ -240,12 +250,22 @@ function anave_export_get_nodes() {
 //fields general policy
 array_push($nodeFields, $field_poliza_reduccion);
 
-//fields validity
-//array_push($nodeFields, $field_poliza_rgo_pago_fracc);
+//fields term references
+  array_push($nodeFields, $field_plz_vehiculo_marca);
+  array_push($nodeFields, $field_vehiculo_submarca);
+  array_push($nodeFields, $field_vehiculo_descripcion);
+  array_push($nodeFields, $field_vehiculo_carroceria_select);
+  array_push($nodeFields, $field_motivos_de_cancelacion);
 
-    array_push($output, array($node->nid => $nodeFields));
+//fields entity references
+  array_push($nodeFields, $field_usuario_de_pagado);
+  array_push($nodeFields, $field_usuario_de_cancelado);
+  array_push($nodeFields, $field_asignar_promotor);
 
-    if ($loop++ == 5) {
+//Array de salida para todos los nodos
+  array_push($output, array($node->nid => $nodeFields));
+
+    if ($loop++ == 9) {
       break;
     }
   }
