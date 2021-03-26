@@ -21,7 +21,7 @@ $field_poliza_forma_pago = isset($node->field_poliza_forma_pago) ?
 $field_poliza_moneda = isset($node->field_poliza_moneda) ?
   $node->field_poliza_moneda['und'][0]['value'] : "";
 
-// Insured fields.
+//fields insured.
 $field_asegurado_nombre = isset($node->field_asegurado_nombre) ?
   $node->field_asegurado_nombre['und'][0]['value'] : "";
 
@@ -34,7 +34,7 @@ $field_asegurado_telefono = isset($node->field_asegurado_telefono) ?
 $field_asegurado_benef_pref = isset($node->field_asegurado_benef_pref) ?
   $node->field_asegurado_benef_pref['und'][0]['value'] : "";
 
-// Vehicle fields.
+//fields vehicle
 $field_vehiculo_modelo = isset($node->field_vehiculo_modelo) ?
   $node->field_vehiculo_modelo['und'][0]['value'] : "";
 
@@ -77,7 +77,7 @@ $field_vehiculo_remolque = isset($node->field_vehiculo_remolque) ?
 $field_vehiculo_tipo_remolque = isset($node->field_vehiculo_tipo_remolque) ?
   $node->field_vehiculo_tipo_remolque['und'][0]['value'] : "";
 
-// Status fields.
+//fields status
 $field_periodo_de_gracia = isset($node->field_periodo_de_gracia) ?
   $node->field_periodo_de_gracia['und'][0]['value'] : "";
 
@@ -90,7 +90,7 @@ $field_fecha_de_pagado = isset($node->field_fecha_de_pagado) ?
 $field_fecha_de_cancelacion = isset($node->field_fecha_de_cancelacion) ?
   $node->field_fecha_de_cancelacion['und'][0]['value'] : "";
 
-// General fields.
+//fields general
 $field_vehiculo_uso = isset($node->field_vehiculo_uso) ?
   $node->field_vehiculo_uso['und'][0]['value'] : "";
 
@@ -115,16 +115,16 @@ $field_vehiculo_numero_inventario = isset($node->field_vehiculo_numero_inventari
 $field_vehiculo_referencia = isset($node->field_vehiculo_referencia) ?
   $node->field_vehiculo_referencia['und'][0]['value'] : "";
 
-// Others fields.
+//fields others
 $field_poliza_impuesto_iva = isset($node->field_poliza_impuesto_iva) ?
   $node->field_poliza_impuesto_iva['und'][0]['value'] : "";
 
-// General policy fields.
+//fields general policy
 $field_poliza_reduccion = isset($node->field_poliza_reduccion) ?
   $node->field_poliza_reduccion['und'][0]['value'] : "";
   //var_dump($node);
 
-// Policy fields.
+//fields policy
 array_push($nodeFields, $field_poliza_oficina);
 array_push($nodeFields, $field_poliza_emision);
 array_push($nodeFields, $field_poliza_vigencia);
@@ -132,13 +132,13 @@ array_push($nodeFields, $field_poliza_coberturas);
 array_push($nodeFields, $field_poliza_forma_pago);
 array_push($nodeFields, $field_poliza_moneda);
 
-// Insured fields.
+//fields insured
 array_push($nodeFields, $field_asegurado_nombre);
 array_push($nodeFields, $field_asegurado_rfc);
 array_push($nodeFields, $field_asegurado_telefono);
 array_push($nodeFields, $field_asegurado_benef_pref);
 
-// Vehicle fields.
+//fields vehicle
 array_push($nodeFields, $field_vehiculo_modelo);
 array_push($nodeFields, $field_vehiculo_color);
 array_push($nodeFields, $field_vehiculo_transmision);
@@ -154,13 +154,13 @@ array_push($nodeFields, $field_vehiculo_descripcion_carga);
 array_push($nodeFields, $field_vehiculo_remolque);
 array_push($nodeFields, $field_vehiculo_tipo_remolque);
 
-// Status fields.
+//fields status
 array_push($nodeFields, $field_periodo_de_gracia);
 array_push($nodeFields, $field_poliza_status);
 array_push($nodeFields, $field_fecha_de_pagado);
 array_push($nodeFields, $field_fecha_de_cancelacion);
 
-// General fields.
+//fields general
 array_push($nodeFields, $field_vehiculo_uso);
 array_push($nodeFields, $field_vehiculo_clave_sbg);
 array_push($nodeFields, $field_vehiculo_categoria);
@@ -170,10 +170,10 @@ array_push($nodeFields, $field_poliza_derecho_poliza);
 array_push($nodeFields, $field_vehiculo_numero_inventario);
 array_push($nodeFields, $field_vehiculo_referencia);
 
-// Others fields.
+//fields others
 array_push($nodeFields, $field_poliza_impuesto_iva);
 
-// General policy fields.
+//fields general policy
 array_push($nodeFields, $field_poliza_reduccion);
 
 array_push($output, array($node->nid => $nodeFields));
