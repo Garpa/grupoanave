@@ -1,7 +1,6 @@
 <?php
+
 /**
  * @file
- * This file has scrip alexa
+ * This file has scrip Alexa.
  */
- 
-?>

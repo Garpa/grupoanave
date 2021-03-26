@@ -1,7 +1,6 @@
 <?php
+
 /**
  * @file
- * This file has scrip raul
+ * This file has scrip Raul.
  */
-
-?>
