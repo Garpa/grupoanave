@@ -5,6 +5,7 @@
  * This file has scrip Raul.
  */
 
+ // Contract content type.
  // Term references fields.
  $field_plz_vehiculo_marca = isset($node->field_plz_vehiculo_marca) &&
   count($node->field_plz_vehiculo_marca) !=0?
@@ -41,7 +42,7 @@
 
  // Comando para corroborar que existan datos dentro del campo mencionado
    //********************
-   //var_dump($node->field_asignar_promotor
+   // var_dump($node->field_asignar_promotor
    //********************
 
  // Term references fields.
@@ -55,6 +56,9 @@
  array_push($node, $field_usuario_de_pagado);
  array_push($node, $field_usuario_de_cancelado);
  array_push($node, $field_asignar_promotor);
+ // Contract content type.
 
  // Array ouput.
  array_push($output, array($node->nid => $node));
+
+ echo '<pre>'.print_r($output, true).'</pre>';
