@@ -43,5 +43,5 @@ function anave_export_get_nodes() {
     }
   }
 
-  return var_dump($output);
+  //return var_dump($output);
 }
