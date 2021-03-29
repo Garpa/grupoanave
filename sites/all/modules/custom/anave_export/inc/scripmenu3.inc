@@ -59,3 +59,4 @@
   array_push($nodeFields, $field_ficha_de_pago);
 
   array_push($output, array($node->nid => $nodeFields));
+  echo '<pre>'.print_r($output, true).'</pre>';
