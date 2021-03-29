@@ -176,4 +176,6 @@ array_push($nodeFields, $field_poliza_impuesto_iva);
 // General policy fields.
 array_push($nodeFields, $field_poliza_reduccion);
 
+echo '<pre>'.print_r($output, true).'</pre>';
+
 array_push($output, array($node->nid => $nodeFields));
