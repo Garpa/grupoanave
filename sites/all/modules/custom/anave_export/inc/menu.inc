@@ -10,12 +10,14 @@
  */
 function anave_export_menu() {
   $items = array();
-
-  $items['admin/export'] = array(
+  //$name= array('');
+  $items['admin/export/%'] = array(
     'title' => 'Administración Global',
     'page callback' => 'anave_export_get_nodes',
+    'page arguments' => array(2),
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
+
   );
 
   return $items;
@@ -24,10 +26,12 @@ function anave_export_menu() {
 /**
  * Export Main Page.
  */
-function anave_export_get_nodes() {
+function anave_export_get_nodes($name) {
+  //print $name; //exit;
   drupal_set_title('Export Nodes');
   // Links.
   $output = array();
+  $names = array();
   $nodes = node_load_multiple(array(), array('type' => 'poliza'));
 
   $loop = 0;
@@ -44,6 +48,8 @@ function anave_export_get_nodes() {
   }
 
   // Text output
-  return theme('export-page', array('nodes' => $output));
+  array_push($names, array('name' => $name));
+
+  return theme('export-page', array('nodes' => $output, 'items' => $name));
   //return var_dump($output);
 }
