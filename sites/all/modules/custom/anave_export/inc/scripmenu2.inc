@@ -61,4 +61,4 @@
  // Array ouput.
  array_push($output, array($node->nid => $node));
 
- echo '<pre>'.print_r($output, true).'</pre>';
+ //echo '<pre>'.print_r($output, true).'</pre>';

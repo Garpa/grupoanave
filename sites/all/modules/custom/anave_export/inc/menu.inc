@@ -43,5 +43,7 @@ function anave_export_get_nodes() {
     }
   }
 
+  // Text output
+  return theme('export-page', array('nodes' => $output));
   //return var_dump($output);
 }
