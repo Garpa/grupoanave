@@ -16,5 +16,13 @@ function anave_export_theme() {
       ),
       'template' => 'templates/export-page',
     ),
+    'export-page-section' => array(
+      'arguments' => array(
+        'id' => NULL,
+        'title' => NULL,
+        'description' => NULL,
+      ),
+      'template' => 'templates/export-page-section',
+    ),
   );
 }
