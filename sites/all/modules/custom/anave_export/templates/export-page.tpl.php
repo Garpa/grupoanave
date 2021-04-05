@@ -9,6 +9,6 @@
  */
 ?>
 <div id="nodes-container">
-  <h1>Hello, student of university UTCosta.</h1>
-  <h5>This is our work of practice for finish our professional service.</h5>
+  <h1>Hello, student of university UTCosta <?php echo $name; ?>. </h1>
+  <p>This is our work of practice for finish our professional service.</p>
 </div>
