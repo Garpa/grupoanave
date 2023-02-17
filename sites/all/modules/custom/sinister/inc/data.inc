@@ -75,9 +75,6 @@ function sinister_number_increase($i = 0) {
   }
 
   $sinister_number = intval($sinister_number) + 1 + $i;
-  if ($sinister_number > 9999) {
-    $sinister_number = 0;
-  }
 
   variable_set('sinister_number', $sinister_number);
   return TRUE;
