@@ -1,7 +1,7 @@
 <table class="print coberturas">
   <thead>
     <tr>
-      <th colspan="3">Tipo de Poliza:</th>
+      <th colspan="3">Tipo de Contrato:</th>
     </tr>
   </thead>
   <tbody>

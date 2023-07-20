@@ -298,7 +298,7 @@ $office  = "$termname-$agent_id";
             <tr>
               <td>
                 <table class="generic"><tr>
-                  <td><strong>Nombre del Asesor:</strong></td>
+                  <td><strong>Nombre del Afiliador:</strong></td>
                   <td align="right"><?php print $agente_nombre;?></td>
                 </tr></table>
               </td>
@@ -320,7 +320,7 @@ $office  = "$termname-$agent_id";
             <tr class="last">
               <td>
                 <table class="generic"><tr>
-                  <td><strong>Clave del Asesor:</strong></td>
+                  <td><strong>Clave del Afiliador:</strong></td>
                   <td align="right"><?php print $agente_uid;?></td>
                 </tr></table>
               </td>

@@ -293,7 +293,7 @@ if(empty($termid)) {
             <tr>
               <td>
                 <table class="generic"><tr>
-                  <td><strong>Nombre del Agente:</strong></td>
+                  <td><strong>Nombre del Afiliador:</strong></td>
                   <td align="right"><?php print $agente_nombre;?></td>
                 </tr></table>
               </td>
@@ -310,7 +310,7 @@ if(empty($termid)) {
             <tr class="last">
               <td>
                 <table class="generic"><tr>
-                  <td><strong>Clave del Agente:</strong></td>
+                  <td><strong>Clave del Afiliador:</strong></td>
                   <td align="right"><?php print $agente_uid;?></td>
                 </tr></table>
               </td>
