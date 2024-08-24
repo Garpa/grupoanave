@@ -144,6 +144,9 @@ function contract_export_export_get_user($user) {
   $data['name'] = ($user->name ?? '');
   $data['mail'] = ($user->mail ?? '');
   $data['status'] = ($user->status ?? '');
+  $data['created'] = ($user->created ?? '');
+  $data['changed'] = ($user->changed ?? '');
+  $data['uid'] = ($user->uid ?? '');
 
   // Text Fields.
   if ($user->field_agente_clave) {
@@ -207,10 +210,17 @@ function contract_export_export_get_contract($node, $year) {
     'site' => variable_get('site_name'),
     'year' => $year,
     'id' => $node->nid,
+    'status' => $node->status,
   ];
 
+  +"revision_uid": "194"
+
+  if ($node->revision_uid) {
+    $data['revision_uid'] = $node->revision_uid;
+  }
+
   if ($node->created) {
-    $data['created'] = $node->created;
+    $data['changed'] = $node->changed;
   }
 
   // Text Fields.
@@ -521,10 +531,18 @@ function contract_export_export_get_contract_get_payments($id) {
   $payments = [];
   foreach ($results as $result) {
     $node = node_load($result->entity_id, NULL, TRUE);
+    $author = user_load($node->uid, TRUE);
+    $editor = user_load($node->revision_uid, TRUE);
+
     $payment = [
       'title' => $node->title,
       'site' => variable_get('site_name'),
       'id' => $node->nid,
+      'status' => $node->status,
+      'created' => $node->created,
+      'changed' => $node->changed,
+      'author' => $author->name,
+      'editor' => $editor->name,
     ];
 
     // Text Fields.
@@ -614,6 +632,9 @@ function contract_export_export_get_sinisters($node, $year) {
     return FALSE;
   }
 
+  $author = node_load($node->uid);
+  $editor = node_load($node->revision_uid);
+
   $sinister = [
     'title' => $node->title,
     'type' => 'sinister',
@@ -621,17 +642,15 @@ function contract_export_export_get_sinisters($node, $year) {
     'site' => variable_get('site_name'),
     'year' => $year,
     'id' => $node->nid,
+    'status' => $node->status,
+    'created' => $node->created,
+    'changed' => $node->changed,
+    'author' => $author->name,
+    'editor' => $editor->name,
   ];
-
-  $author = user_load($node->uid, TRUE);
-  $sinister['author'] = $author->name;
 
   if ($node->field_poliza) {
     $sinister['field_poliza'] = contract_export_export_get_field_value($node->field_poliza, 'node');
-  }
-
-  if ($node->created) {
-    $data['created'] = $node->created;
   }
 
   // Text Fields.
