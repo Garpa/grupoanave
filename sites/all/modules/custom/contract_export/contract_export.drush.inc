@@ -10,29 +10,37 @@
  */
 function contract_export_drush_command() {
   $items = array();
-  $items['export-contracts'] = array(
+  $items['export-contracts'] = [
     'callback' => 'contract_export_export',
     'description' => 'Export all contract nodes',
-    'options' => array(
-      'roles' => 'pick roles',
-      'reset' => 'Reset counter for node, revision and comment tables.',
-    ),
-    'aliases' => array('content_ex'),
-  );
+    'arguments' => [
+       'export_file' => 'the output file name.',
+       'year' => 'the site year for files.'
+     ],
+    'aliases' => ['ce_export'],
+  ];
   return $items;
 }
 
 /**
  * Drush callback to delete content
  */
-function contract_export_export() {
-  $file = fopen(DRUPAL_ROOT . "/dumps/export.txt","w");
+function contract_export_export($export_file = NULL, $year = NULL) {
+  if ($export_file) {
+    $export_file = DRUPAL_ROOT . "/dumps/" . $export_file;
+  }
+  else {
+    $export_file = DRUPAL_ROOT . "/dumps/export.txt";
+  }
+
+  $file = fopen($export_file, "w");
   fwrite($file, '');
   fclose($file);
   $results = [];
   $limit = 50;
   $start = 0;
 
+  // Users.
   do {
     $is_more = FALSE;
     $results = [];
@@ -42,11 +50,7 @@ function contract_export_export() {
       ->range($start, $limit);
     $results = $query->execute()->fetchAll();
 
-    if (count($results) == $limit) {
-      $is_more = TRUE;
-    }
-
-    $file = fopen(DRUPAL_ROOT . "/dumps/export.txt","a");
+    $file = fopen($export_file, "a");
     foreach ($results as $result) {
       if ($result->uid == 0) {
         continue;
@@ -58,13 +62,20 @@ function contract_export_export() {
     }
     fclose($file);
 
-    $start = $start + $limit;
-    drush_print('Added ' . ($start) . ' users');
+    if (count($results) == $limit) {
+      $is_more = TRUE;
+      $start = $start + $limit;
+      drush_print('Added ' . ($start) . ' users');
+    }
+    else {
+      drush_print('Added ' . ($start + count($results)) . ' users');
+    }
 
   } while ($is_more);
 
   $start = 0;
 
+  // Contracts and payments.
   do {
     $is_more = FALSE;
     $results = [];
@@ -75,21 +86,55 @@ function contract_export_export() {
       ->condition('n.type', 'poliza');
     $results = $query->execute()->fetchAll();
 
-    if (count($results) == $limit) {
-      $is_more = TRUE;
-    }
-
-    $file = fopen(DRUPAL_ROOT . "/dumps/export.txt","a");
+    $file = fopen($export_file, "a");
     foreach ($results as $result) {
 
       $node = node_load($result->nid, NULL, TRUE);
-      $line = contract_export_export_get_contract($node);
+      $line = contract_export_export_get_contract($node, $year);
       fwrite($file, $line.PHP_EOL);
     }
     fclose($file);
 
-    $start = $start + $limit;
-    drush_print('Added ' . ($start) . ' nodes');
+    if (count($results) == $limit) {
+      $is_more = TRUE;
+      $start = $start + $limit;
+      drush_print('Added ' . ($start) . ' contracts');
+    }
+    else {
+      drush_print('Added ' . ($start + count($results)) . ' contracts');
+    }
+
+  } while ($is_more);
+
+  $start = 0;
+
+  // Sinisters.
+  do {
+    $is_more = FALSE;
+    $results = [];
+
+    $query = db_select('node', 'n');
+    $query->fields('n', array('nid'))
+      ->range($start, $limit)
+      ->condition('n.type', 'siniestro');
+    $results = $query->execute()->fetchAll();
+
+    $file = fopen($export_file, "a");
+    foreach ($results as $result) {
+      $node = node_load($result->nid, NULL, TRUE);
+      $line = contract_export_export_get_sinisters($node, $year);
+      fwrite($file, $line.PHP_EOL);
+    }
+    fclose($file);
+
+    if (count($results) == $limit) {
+      $is_more = TRUE;
+      $start = $start + $limit;
+      drush_print('Added ' . ($start) . ' sinisters');
+    }
+    else {
+      drush_print('Added ' . ($start + count($results)) . ' sinisters');
+    }
 
   } while ($is_more);
 }
@@ -142,7 +187,7 @@ function contract_export_export_get_user($user) {
 
   // Address Field.
   if ($user->field_domicilio) {
-    $data['field_domicilio'] = contract_export_export_get_field_value($entity->field_domicilio, 'address');
+    $data['field_domicilio'] = contract_export_export_get_field_value($user->field_domicilio, 'address');
   }
   // Address Field End.
 
@@ -152,16 +197,21 @@ function contract_export_export_get_user($user) {
 /**
  * Helper function to get all contract data.
  */
-function contract_export_export_get_contract($node) {
+function contract_export_export_get_contract($node, $year) {
   $data = [];
   $author = user_load($node->uid, TRUE);
   $data = [
     'type' => 'contract',
     'title' => ($node->title ?? ''),
-    'author' => $author->mail,
+    'author' => $author->name,
     'site' => variable_get('site_name'),
+    'year' => $year,
     'id' => $node->nid,
   ];
+
+  if ($node->created) {
+    $data['created'] = $node->created;
+  }
 
   // Text Fields.
   if ($node->field_asegurado_benef_pref) {
@@ -450,10 +500,6 @@ function contract_export_export_get_contract($node) {
   $data['payments'] = contract_export_export_get_contract_get_payments($node->nid);
   // Payments End.
 
-  // Sinister.
-  $data['sinister'] = contract_export_export_get_contract_get_sinisters($node->nid);
-  // Sinister End.
-
   return json_encode($data);
 }
 
@@ -563,431 +609,428 @@ function contract_export_export_get_contract_get_payments($id) {
 /**
  * Helper function to get all contract sinister.
  */
-function contract_export_export_get_contract_get_sinisters($id) {
-  if (!$id) {
+function contract_export_export_get_sinisters($node, $year) {
+  if (!$node) {
     return FALSE;
   }
 
-  $query = db_select('field_data_field_poliza', 'n');
-  $query->fields('n', ['entity_id'])
-    ->condition('bundle', 'siniestro')
-    ->condition('field_poliza_target_id', $id);
+  $sinister = [
+    'title' => $node->title,
+    'type' => 'sinister',
+    'date' => $node->created,
+    'site' => variable_get('site_name'),
+    'year' => $year,
+    'id' => $node->nid,
+  ];
 
-  $results = $query->execute()->fetchAll();
+  $author = user_load($node->uid, TRUE);
+  $sinister['author'] = $author->name;
 
-  $sinisters = [];
-  foreach ($results as $result) {
-    $node = node_load($result->entity_id, NULL, TRUE);
-    $sinister = [
-      'title' => $node->title,
-      'date' => $node->created,
-      'site' => variable_get('site_name'),
-      'id' => $node->nid,
-    ];
+  if ($node->field_poliza) {
+    $sinister['field_poliza'] = contract_export_export_get_field_value($node->field_poliza, 'node');
+  }
 
-    $author = user_load($node->uid, TRUE);
-    $sinister['author'] = $author->mail;
+  if ($node->created) {
+    $data['created'] = $node->created;
+  }
+
+  // Text Fields.
+  if ($node->field_poblacion) {
+    $sinister['field_poblacion'] = contract_export_export_get_field_value($node->field_poblacion, 'text');
+  }
+
+  if ($node->field_poliza_comentarios) {
+    $sinister['field_poliza_comentarios'] = contract_export_export_get_field_value($node->field_poliza_comentarios, 'text');
+  }
+
+  if ($node->field_lugar_referencias) {
+    $sinister['field_lugar_referencias'] = contract_export_export_get_field_value($node->field_lugar_referencias, 'text');
+  }
+
+  if ($node->field_comentarios_de_siniestro) {
+    $sinister['field_comentarios_de_siniestro'] = contract_export_export_get_field_value($node->field_comentarios_de_siniestro, 'text');
+  }
+
+  if ($node->field_lugar_atencion) {
+    $sinister['field_lugar_atencion'] = contract_export_export_get_field_value($node->field_lugar_atencion, 'text');
+  }
+
+  if ($node->field_informe) {
+    $sinister['field_informe'] = contract_export_export_get_field_value($node->field_informe, 'text');
+  }
+  // Text Fields End.
+
+  // Number Fields.
+  if ($node->field_danos_materiales) {
+    $sinister['field_danos_materiales'] = contract_export_export_get_field_value($node->field_danos_materiales, 'number');
+  }
+
+  if ($node->field_robo) {
+    $sinister['field_robo'] = contract_export_export_get_field_value($node->field_robo, 'number');
+  }
+
+  if ($node->field_resp_civil) {
+    $sinister['field_resp_civil'] = contract_export_export_get_field_value($node->field_resp_civil, 'number');
+  }
+
+  if ($node->field_gastos_medicos) {
+    $sinister['field_gastos_medicos'] = contract_export_export_get_field_value($node->field_gastos_medicos, 'number');
+  }
+
+  if ($node->field_rc_viajero) {
+    $sinister['field_rc_viajero'] = contract_export_export_get_field_value($node->field_rc_viajero, 'number');
+  }
+
+  if ($node->field_reserva_total) {
+    $sinister['field_reserva_total'] = contract_export_export_get_field_value($node->field_reserva_total, 'number');
+  }
+  // Number Fields End.
+
+  // List Fields.
+  if ($node->field_status_sinister) {
+    $sinister['field_status_sinister'] = contract_export_export_get_field_value($node->field_status_sinister, 'list', 'field_status_sinister');
+  }
+  // List Fields End.
+
+  // Date Fields.
+  if ($node->field_fecha_arribo) {
+    $sinister['field_fecha_arribo'] = contract_export_export_get_field_value($node->field_fecha_arribo, 'date');
+  }
+  // Date Fields End.
+
+  // Term Reference Fields.
+  if ($node->field_estado_single) {
+    $sinister['field_estado_single'] = contract_export_export_get_field_value($node->field_estado_single, 'term');
+  }
+  // Term Reference Fields End.
+
+  // User Fields.
+  if ($node->field_ajustador) {
+    $sinister['field_ajustador'] = contract_export_export_get_field_value($node->field_ajustador, 'user');
+  }
+
+  if ($node->field_abogado) {
+    $sinister['field_abogado'] = contract_export_export_get_field_value($node->field_abogado, 'user');
+  }
+
+  if ($node->field_hospital) {
+    $sinister['field_hospital'] = contract_export_export_get_field_value($node->field_hospital, 'user');
+  }
+
+  if ($node->field_taller) {
+    $sinister['field_taller'] = contract_export_export_get_field_value($node->field_taller, 'user');
+  }
+
+  if ($node->field_grua) {
+    $sinister['field_grua'] = contract_export_export_get_field_value($node->field_grua, 'user');
+  }
+
+  if ($node->field_proveedores) {
+    $sinister['field_proveedores'] = contract_export_export_get_field_value($node->field_proveedores, 'user');
+  }
+  // User Fields End.
+
+  // Geo Fields.
+  if ($node->field_mapa_siniestro) {
+    $sinister['field_mapa_siniestro'] = contract_export_export_get_field_value($node->field_mapa_siniestro, 'geo');
+  }
+
+  if ($node->field_mapa_arribo) {
+    $sinister['field_mapa_arribo'] = contract_export_export_get_field_value($node->field_mapa_arribo, 'geo');
+  }
+  // Geo Fields End.
+
+  // Field collection.
+  if ($node->field_siniestro_archivo) {
+    $archive_field = $node->field_siniestro_archivo;
+    $archive_field = $archive_field[LANGUAGE_NONE];
+    $archives = [];
+
+    foreach($archive_field as $archive) {
+      $archive = $archive['value'];
+      $archive_item = [];
+      $entity = entity_load('field_collection_item', [$archive], [], TRUE);
+      $entity = $entity[$archive];
+
+      if ($entity->field_fecha) {
+        $archive_item['field_fecha'] = contract_export_export_get_field_value($entity->field_fecha, 'date');
+      }
+
+      if ($entity->field_archivo_autor) {
+        $archive_item['field_archivo_autor'] = contract_export_export_get_field_value($entity->field_archivo_autor, 'user');
+      }
+
+      if ($entity->field_documentos) {
+        $archive_item['field_documentos'] = contract_export_export_get_field_files($entity->field_documentos);
+      }
+
+      if ($entity->field_archivo_categoria) {
+        $archive_item['field_archivo_categoria'] = contract_export_export_get_field_value($entity->field_archivo_categoria, 'list', 'field_archivo_categoria');
+      }
+
+      if ($entity->field_archivo_comentario) {
+        $archive_item['field_archivo_comentario'] = contract_export_export_get_field_value($entity->field_archivo_comentario, 'text');
+      }
+
+      if ($entity->field_visualizador) {
+        $archive_item['field_visualizador'] = contract_export_export_get_field_files($entity->field_visualizador);
+      }
+
+      if ($archive_item) {
+        $archives[] = $archive_item;
+      }
+    }
+
+    $sinister['field_siniestro_archivo'] = $archives;
+  }
+
+  if ($node->field_conductor) {
+    $driver_field = $node->field_conductor;
+    $driver_field = $driver_field[LANGUAGE_NONE][0]['value'];
+    $driver = [];
+    $entity = entity_load('field_collection_item', [$driver_field], [], TRUE);
+    $entity = $entity[$driver_field];
 
     // Text Fields.
-    if ($node->field_poblacion) {
-      $sinister['field_poblacion'] = contract_export_export_get_field_value($node->field_poblacion, 'text');
+    if ($entity->field_nombre) {
+      $driver['field_nombre'] = contract_export_export_get_field_value($entity->field_nombre, 'text');
     }
 
-    if ($node->field_poliza_comentarios) {
-      $sinister['field_poliza_comentarios'] = contract_export_export_get_field_value($node->field_poliza_comentarios, 'text');
+    if ($entity->field_rfc) {
+      $driver['field_rfc'] = contract_export_export_get_field_value($entity->field_rfc, 'text');
     }
 
-    if ($node->field_lugar_referencias) {
-      $sinister['field_lugar_referencias'] = contract_export_export_get_field_value($node->field_lugar_referencias, 'text');
+    if ($entity->field_licencia_numero) {
+      $driver['field_licencia_numero'] = contract_export_export_get_field_value($entity->field_licencia_numero, 'text');
     }
 
-    if ($node->field_comentarios_de_siniestro) {
-      $sinister['field_comentarios_de_siniestro'] = contract_export_export_get_field_value($node->field_comentarios_de_siniestro, 'text');
+    if ($entity->field_telefono) {
+      $driver['field_telefono'] = contract_export_export_get_field_value($entity->field_telefono, 'text');
     }
 
-    if ($node->field_lugar_atencion) {
-      $sinister['field_lugar_atencion'] = contract_export_export_get_field_value($node->field_lugar_atencion, 'text');
+    if ($entity->field_nombre_quien_reporta) {
+      $driver['field_nombre_quien_reporta'] = contract_export_export_get_field_value($entity->field_nombre_quien_reporta  , 'text');
     }
 
-    if ($node->field_informe) {
-      $sinister['field_informe'] = contract_export_export_get_field_value($node->field_informe, 'text');
+    if ($entity->field_telefono_quien_reporta) {
+      $driver['field_telefono_quien_reporta'] = contract_export_export_get_field_value($entity->field_telefono_quien_reporta, 'text');
     }
     // Text Fields End.
 
-    // Number Fields.
-    if ($node->field_danos_materiales) {
-      $sinister['field_danos_materiales'] = contract_export_export_get_field_value($node->field_danos_materiales, 'number');
-    }
-
-    if ($node->field_robo) {
-      $sinister['field_robo'] = contract_export_export_get_field_value($node->field_robo, 'number');
-    }
-
-    if ($node->field_resp_civil) {
-      $sinister['field_resp_civil'] = contract_export_export_get_field_value($node->field_resp_civil, 'number');
-    }
-
-    if ($node->field_gastos_medicos) {
-      $sinister['field_gastos_medicos'] = contract_export_export_get_field_value($node->field_gastos_medicos, 'number');
-    }
-
-    if ($node->field_rc_viajero) {
-      $sinister['field_rc_viajero'] = contract_export_export_get_field_value($node->field_rc_viajero, 'number');
-    }
-
-    if ($node->field_reserva_total) {
-      $sinister['field_reserva_total'] = contract_export_export_get_field_value($node->field_reserva_total, 'number');
-    }
-    // Number Fields End.
-
-    // List Fields.
-    if ($node->field_status_sinister) {
-      $sinister['field_status_sinister'] = contract_export_export_get_field_value($node->field_status_sinister, 'list', 'field_status_sinister');
-    }
-    // Number Fields End.
-
-    // Date Fields.
-    if ($node->field_fecha_arribo) {
-      $sinister['field_fecha_arribo'] = contract_export_export_get_field_value($node->field_fecha_arribo, 'date');
-    }
-    // Date Fields End.
-
-    // Term Reference Fields.
-    if ($node->field_estado_single) {
-      $sinister['field_estado_single'] = contract_export_export_get_field_value($node->field_estado_single, 'term');
-    }
-    // Term Reference Fields End.
-
     // User Fields.
-    if ($node->field_ajustador) {
-      $sinister['field_ajustador'] = contract_export_export_get_field_value($node->field_ajustador, 'user');
+    if ($entity->field_licencia_tipo) {
+      $driver['field_licencia_tipo'] = contract_export_export_get_field_value($entity->field_licencia_tipo, 'term');
     }
 
-    if ($node->field_abogado) {
-      $sinister['field_abogado'] = contract_export_export_get_field_value($node->field_abogado, 'user');
-    }
-
-    if ($node->field_hospital) {
-      $sinister['field_hospital'] = contract_export_export_get_field_value($node->field_hospital, 'user');
-    }
-
-    if ($node->field_taller) {
-      $sinister['field_taller'] = contract_export_export_get_field_value($node->field_taller, 'user');
-    }
-
-    if ($node->field_grua) {
-      $sinister['field_grua'] = contract_export_export_get_field_value($node->field_grua, 'user');
-    }
-
-    if ($node->field_proveedores) {
-      $sinister['field_proveedores'] = contract_export_export_get_field_value($node->field_proveedores, 'user');
+    if ($entity->field_licencia_alta_lugar) {
+      $driver['field_licencia_alta_lugar'] = contract_export_export_get_field_value($entity->field_licencia_alta_lugar, 'term');
     }
     // User Fields End.
 
-    // User Fields.
-    if ($node->field_mapa_siniestro) {
-      $sinister['field_mapa_siniestro'] = contract_export_export_get_field_value($node->field_mapa_siniestro, 'geo');
+    // Fields.
+    if ($entity->field_licencia_alta_fecha) {
+      $driver['field_licencia_alta_fecha'] = contract_export_export_get_field_value($entity->field_licencia_alta_fecha, 'date');
     }
 
-    if ($node->field_mapa_arribo) {
-      $sinister['field_mapa_arribo'] = contract_export_export_get_field_value($node->field_mapa_arribo, 'geo');
+    if ($entity->field_conductor_reporta) {
+      $driver['field_conductor_reporta'] = contract_export_export_get_field_value($entity->field_conductor_reporta, 'boolean');
     }
-    // User Fields End.
+    // Fields End.
 
-    // Field collection.
-    if ($node->field_siniestro_archivo) {
-      $archive_field = $node->field_siniestro_archivo;
-      $archive_field = $archive_field[LANGUAGE_NONE];
-      $archives = [];
+    if ($entity->field_domicilio) {
+      $driver['field_domicilio'] = contract_export_export_get_field_value($entity->field_domicilio, 'address');
+    }
 
-      foreach($archive_field as $archive) {
-        $archive = $archive['value'];
-        $archive_item = [];
-        $entity = entity_load('field_collection_item', [$archive], [], TRUE);
-        $entity = $entity[$archive];
+    $sinister['field_conductor'] = $driver;
+  }
 
-        if ($entity->field_archivo_comentario) {
-          $archive_item['field_archivo_comentario'] = contract_export_export_get_field_value($entity->field_archivo_comentario, 'text');
-        }
+  if ($node->field_vehiculo_tercero) {
+    $vehicle_other_field = $node->field_vehiculo_tercero;
+    $vehicle_other_field = $vehicle_other_field[LANGUAGE_NONE];
+    $vehicle_others = [];
 
-        if ($entity->field_archivo_categoria) {
-          $archive_item['field_archivo_categoria'] = contract_export_export_get_field_value($entity->field_archivo_categoria, 'list', 'field_archivo_categoria');
-        }
+    foreach($vehicle_other_field as $vehicle_other) {
+      $vehicle_other = $vehicle_other['value'];
+      $vehicle_other_item = [];
+      $entity = entity_load('field_collection_item', [$vehicle_other], [], TRUE);
+      $entity = $entity[$vehicle_other];
 
-        if ($entity->field_fecha) {
-          $archive_item['field_fecha'] = contract_export_export_get_field_value($entity->field_fecha, 'date');
-        }
-
-        if ($entity->field_archivo_autor) {
-          $archive_item['field_archivo_autor'] = contract_export_export_get_field_value($entity->field_archivo_autor, 'user');
-        }
-
-        if ($entity->field_documentos) {
-          $archive_item['field_documentos'] = contract_export_export_get_field_files($entity->field_documentos);
-        }
-
-        if ($entity->field_visualizador) {
-          $archive_item['field_visualizador'] = contract_export_export_get_field_files($entity->field_visualizador);
-        }
-
-        if ($archive_item) {
-          $archives[] = $archive_item;
-        }
+      // Text Fields
+      if ($entity->field_propietario_nombre) {
+        $vehicle_other_item['field_propietario_nombre'] = contract_export_export_get_field_value($entity->field_propietario_nombre, 'text');
       }
 
-      $sinister['field_siniestro_archivo'] = $archives;
-    }
-
-    if ($node->field_conductor) {
-      $driver_field = $node->field_conductor;
-      $driver_field = $driver_field[LANGUAGE_NONE][0]['value'];
-      $driver = [];
-      $entity = entity_load('field_collection_item', [$driver_field], [], TRUE);
-      $entity = $entity[$driver_field];
-
-      // Text Fields.
-      if ($entity->field_nombre) {
-        $driver['field_nombre'] = contract_export_export_get_field_value($entity->field_nombre, 'text');
+      if ($entity->field_propietario_telefono) {
+        $vehicle_other_item['field_propietario_telefono'] = contract_export_export_get_field_value($entity->field_propietario_telefono, 'text');
       }
 
-      if ($entity->field_rfc) {
-        $driver['field_rfc'] = contract_export_export_get_field_value($entity->field_rfc, 'text');
+      if ($entity->field_conductor_nombre) {
+        $vehicle_other_item['field_conductor_nombre'] = contract_export_export_get_field_value($entity->field_conductor_nombre, 'text');
+      }
+
+      if ($entity->field_conductor_telefono) {
+        $vehicle_other_item['field_conductor_telefono'] = contract_export_export_get_field_value($entity->field_conductor_telefono, 'text');
       }
 
       if ($entity->field_licencia_numero) {
-        $driver['field_licencia_numero'] = contract_export_export_get_field_value($entity->field_licencia_numero, 'text');
+        $vehicle_other_item['field_licencia_numero'] = contract_export_export_get_field_value($entity->field_licencia_numero, 'text');
       }
 
-      if ($entity->field_telefono) {
-        $driver['field_telefono'] = contract_export_export_get_field_value($entity->field_telefono, 'text');
+      if ($entity->field_3ro_vehiculo_placas) {
+        $vehicle_other_item['field_3ro_vehiculo_placas'] = contract_export_export_get_field_value($entity->field_3ro_vehiculo_placas, 'text');
       }
 
-      if ($entity->field_nombre_quien_reporta) {
-        $driver['field_nombre_quien_reporta'] = contract_export_export_get_field_value($entity->field_nombre_quien_reporta  , 'text');
+      if ($entity->field_3ro_vehiculo_serie) {
+        $vehicle_other_item['field_3ro_vehiculo_serie'] = contract_export_export_get_field_value($entity->field_3ro_vehiculo_serie, 'text');
       }
 
-      if ($entity->field_telefono_quien_reporta) {
-        $driver['field_telefono_quien_reporta'] = contract_export_export_get_field_value($entity->field_telefono_quien_reporta, 'text');
+      if ($entity->field_3ro_numero_poliza) {
+        $vehicle_other_item['field_3ro_numero_poliza'] = contract_export_export_get_field_value($entity->field_3ro_numero_poliza, 'text');
+      }
+
+      if ($entity->field_3ro_cobertura) {
+        $vehicle_other_item['field_3ro_cobertura'] = contract_export_export_get_field_value($entity->field_3ro_cobertura, 'text');
+      }
+
+      if ($entity->field_3ro_deducible) {
+        $vehicle_other_item['field_3ro_deducible'] = contract_export_export_get_field_value($entity->field_3ro_deducible, 'text');
+      }
+
+      if ($entity->field_3ro_siniestro) {
+        $vehicle_other_item['field_3ro_siniestro'] = contract_export_export_get_field_value($entity->field_3ro_siniestro, 'text');
+      }
+
+      if ($entity->field_3ro_vehiculo_danos) {
+        $vehicle_other_item['field_3ro_vehiculo_danos'] = contract_export_export_get_field_value($entity->field_3ro_vehiculo_danos, 'text');
       }
       // Text Fields End.
 
-      // User Fields.
-      if ($entity->field_licencia_tipo) {
-        $driver['field_licencia_tipo'] = contract_export_export_get_field_value($entity->field_licencia_tipo, 'term');
+      // Term Fields.
+      if ($entity->field_vehiculo_marca) {
+        $vehicle_other_item['field_vehiculo_marca'] = contract_export_export_get_field_value($entity->field_vehiculo_marca, 'term');
       }
 
-      if ($entity->field_licencia_alta_lugar) {
-        $driver['field_licencia_alta_lugar'] = contract_export_export_get_field_value($entity->field_licencia_alta_lugar, 'term');
-      }
-      // User Fields End.
-
-      // Fields.
-      if ($entity->field_licencia_alta_fecha) {
-        $driver['field_licencia_alta_fecha'] = contract_export_export_get_field_value($entity->field_licencia_alta_fecha, 'date');
+      if ($entity->field_vehiculo_tipo) {
+        $vehicle_other_item['field_vehiculo_tipo'] = contract_export_export_get_field_value($entity->field_vehiculo_tipo, 'term');
       }
 
-      if ($entity->field_conductor_reporta) {
-        $driver['field_conductor_reporta'] = contract_export_export_get_field_value($entity->field_conductor_reporta, 'boolean');
+      if ($entity->field_3ro_vehiculo_color) {
+        $vehicle_other_item['field_3ro_vehiculo_color'] = contract_export_export_get_field_value($entity->field_3ro_vehiculo_color, 'term');
       }
+
+      if ($entity->field_3ro_aseguradora) {
+        $vehicle_other_item['field_3ro_aseguradora'] = contract_export_export_get_field_value($entity->field_3ro_aseguradora, 'term');
+      }
+
+      if ($entity->field_3ro_ajustador) {
+        $vehicle_other_item['field_3ro_ajustador'] = contract_export_export_get_field_value($entity->field_3ro_ajustador, 'term');
+      }
+
+      if ($entity->field_promotor) {
+        $vehicle_other_item['field_promotor'] = contract_export_export_get_field_value($entity->field_promotor, 'term');
+      }
+      // Term Fields End.
+
+      //Fields.
+        if ($entity->field_3ro_vehiculo_modelo) {
+          $vehicle_other_item['field_3ro_vehiculo_modelo'] = contract_export_export_get_field_value($entity->field_3ro_vehiculo_modelo, 'number');
+        }
+
+        if ($entity->field_conductor_es_propietario) {
+          $vehicle_other_item['field_conductor_es_propietario'] = contract_export_export_get_field_value($entity->field_conductor_es_propietario, 'list', 'field_conductor_es_propietario');
+        }
+
+        if ($entity->field_3ro_vencimiento) {
+          $vehicle_other_item['field_3ro_vencimiento'] = contract_export_export_get_field_value($entity->field_3ro_vencimiento, 'date');
+        }
+
+        if ($entity->field_taller) {
+          $vehicle_other_item['field_taller'] = contract_export_export_get_field_value($entity->field_taller, 'user');
+        }
+
+        if ($entity->field_propietario_domicilio) {
+          $vehicle_other_item['field_propietario_domicilio'] = contract_export_export_get_field_value($entity->field_propietario_domicilio, 'address');
+        }
+
+        if ($entity->field_conductor_domicilio) {
+          $vehicle_other_item['field_conductor_domicilio'] = contract_export_export_get_field_value($entity->field_conductor_domicilio, 'address');
+        }
       // Fields End.
 
-      if ($entity->field_domicilio) {
-        $driver['field_domicilio'] = contract_export_export_get_field_value($entity->field_domicilio, 'address');
+      if ($vehicle_other_item) {
+        $vehicle_others[] = $vehicle_other_item;
       }
-
-      $sinister['field_conductor'] = $driver;
     }
 
-    if ($node->field_vehiculo_tercero) {
-      $vehicle_other_field = $node->field_vehiculo_tercero;
-      $vehicle_other_field = $vehicle_other_field[LANGUAGE_NONE];
-      $vehicle_others = [];
-
-      foreach($vehicle_other_field as $vehicle_other) {
-        $vehicle_other = $vehicle_other['value'];
-        $vehicle_other_item = [];
-        $entity = entity_load('field_collection_item', [$vehicle_other], [], TRUE);
-        $entity = $entity[$vehicle_other];
-
-        // Text Fields
-        if ($entity->field_propietario_nombre) {
-          $vehicle_other_item['field_propietario_nombre'] = contract_export_export_get_field_value($entity->field_propietario_nombre, 'text');
-        }
-
-        if ($entity->field_propietario_telefono) {
-          $vehicle_other_item['field_propietario_telefono'] = contract_export_export_get_field_value($entity->field_propietario_telefono, 'text');
-        }
-
-        if ($entity->field_conductor_nombre) {
-          $vehicle_other_item['field_conductor_nombre'] = contract_export_export_get_field_value($entity->field_conductor_nombre, 'text');
-        }
-
-        if ($entity->field_conductor_telefono) {
-          $vehicle_other_item['field_conductor_telefono'] = contract_export_export_get_field_value($entity->field_conductor_telefono, 'text');
-        }
-
-        if ($entity->field_licencia_numero) {
-          $vehicle_other_item['field_licencia_numero'] = contract_export_export_get_field_value($entity->field_licencia_numero, 'text');
-        }
-
-        if ($entity->field_3ro_vehiculo_placas) {
-          $vehicle_other_item['field_3ro_vehiculo_placas'] = contract_export_export_get_field_value($entity->field_3ro_vehiculo_placas, 'text');
-        }
-
-        if ($entity->field_3ro_vehiculo_serie) {
-          $vehicle_other_item['field_3ro_vehiculo_serie'] = contract_export_export_get_field_value($entity->field_3ro_vehiculo_serie, 'text');
-        }
-
-        if ($entity->field_3ro_numero_poliza) {
-          $vehicle_other_item['field_3ro_numero_poliza'] = contract_export_export_get_field_value($entity->field_3ro_numero_poliza, 'text');
-        }
-
-        if ($entity->field_3ro_cobertura) {
-          $vehicle_other_item['field_3ro_cobertura'] = contract_export_export_get_field_value($entity->field_3ro_cobertura, 'text');
-        }
-
-        if ($entity->field_3ro_deducible) {
-          $vehicle_other_item['field_3ro_deducible'] = contract_export_export_get_field_value($entity->field_3ro_deducible, 'text');
-        }
-
-        if ($entity->field_3ro_siniestro) {
-          $vehicle_other_item['field_3ro_siniestro'] = contract_export_export_get_field_value($entity->field_3ro_siniestro, 'text');
-        }
-
-        if ($entity->field_3ro_vehiculo_danos) {
-          $vehicle_other_item['field_3ro_vehiculo_danos'] = contract_export_export_get_field_value($entity->field_3ro_vehiculo_danos, 'text');
-        }
-        // Text Fields End.
-
-        // Term Fields.
-        if ($entity->field_vehiculo_marca) {
-          $vehicle_other_item['field_vehiculo_marca'] = contract_export_export_get_field_value($entity->field_vehiculo_marca, 'term');
-        }
-
-        if ($entity->field_vehiculo_tipo) {
-          $vehicle_other_item['field_vehiculo_tipo'] = contract_export_export_get_field_value($entity->field_vehiculo_tipo, 'term');
-        }
-
-        if ($entity->field_3ro_vehiculo_color) {
-          $vehicle_other_item['field_3ro_vehiculo_color'] = contract_export_export_get_field_value($entity->field_3ro_vehiculo_color, 'term');
-        }
-
-        if ($entity->field_3ro_aseguradora) {
-          $vehicle_other_item['field_3ro_aseguradora'] = contract_export_export_get_field_value($entity->field_3ro_aseguradora, 'term');
-        }
-
-        if ($entity->field_3ro_ajustador) {
-          $vehicle_other_item['field_3ro_ajustador'] = contract_export_export_get_field_value($entity->field_3ro_ajustador, 'term');
-        }
-
-        if ($entity->field_promotor) {
-          $vehicle_other_item['field_promotor'] = contract_export_export_get_field_value($entity->field_promotor, 'term');
-        }
-        // Term Fields End.
-
-        //Fields.
-          if ($entity->field_3ro_vehiculo_modelo) {
-            $vehicle_other_item['field_3ro_vehiculo_modelo'] = contract_export_export_get_field_value($entity->field_3ro_vehiculo_modelo, 'number');
-          }
-
-          if ($entity->field_conductor_es_propietario) {
-            $vehicle_other_item['field_conductor_es_propietario'] = contract_export_export_get_field_value($entity->field_conductor_es_propietario, 'list', 'field_conductor_es_propietario');
-          }
-
-          if ($entity->field_3ro_vencimiento) {
-            $vehicle_other_item['field_3ro_vencimiento'] = contract_export_export_get_field_value($entity->field_3ro_vencimiento, 'date');
-          }
-
-          if ($entity->field_taller) {
-            $vehicle_other_item['field_taller'] = contract_export_export_get_field_value($entity->field_taller, 'user');
-          }
-
-          if ($entity->field_propietario_domicilio) {
-            $vehicle_other_item['field_propietario_domicilio'] = contract_export_export_get_field_value($entity->field_propietario_domicilio, 'address');
-          }
-
-          if ($entity->field_conductor_domicilio) {
-            $vehicle_other_item['field_conductor_domicilio'] = contract_export_export_get_field_value($entity->field_conductor_domicilio, 'address');
-          }
-        // Fields End.
-
-        if ($vehicle_other_item) {
-          $vehicle_others[] = $vehicle_other_item;
-        }
-      }
-
-      $sinister['field_vehiculo_tercero'] = $vehicle_others;
-    }
-
-    if ($node->field_lesionado) {
-      $injured_field = $node->field_lesionado;
-      $injured_field = $injured_field[LANGUAGE_NONE];
-      $injured_group = [];
-
-      foreach($injured_field as $injured) {
-        $injured = $injured['value'];
-        $injured_item = [];
-        $entity = entity_load('field_collection_item', [$injured], [], TRUE);
-        $entity = $entity[$injured];
-
-        // Text Fields
-        if ($entity->field_lesionado_nombre) {
-          $injured_item['field_lesionado_nombre'] = contract_export_export_get_field_value($entity->field_lesionado_nombre, 'text');
-        }
-
-        if ($entity->field_lesionado_telefono) {
-          $injured_item['field_lesionado_telefono'] = contract_export_export_get_field_value($entity->field_lesionado_telefono, 'text');
-        }
-
-        if ($entity->field_lesionado_ambulancia_info) {
-          $injured_item['field_lesionado_ambulancia_info'] = contract_export_export_get_field_value($entity->field_lesionado_ambulancia_info, 'text');
-        }
-
-        if ($entity->field_lesionado_pase_medico) {
-          $injured_item['field_lesionado_pase_medico'] = contract_export_export_get_field_value($entity->field_lesionado_pase_medico, 'text');
-        }
-
-        if ($entity->field_lesionado_lesiones) {
-          $injured_item['field_lesionado_lesiones'] = contract_export_export_get_field_value($entity->field_lesionado_lesiones, 'text');
-        }
-        // Text Fields End.
-
-        //Fields.
-          if ($entity->field_lesionado_edad) {
-            $injured_item['field_lesionado_edad'] = contract_export_export_get_field_value($entity->field_lesionado_edad, 'number');
-          }
-
-
-          if ($entity->field_lesionado_riesgo_b) {
-            $injured_item['field_lesionado_riesgo_b'] = contract_export_export_get_field_value($entity->field_lesionado_riesgo_b, 'list', 'field_lesionado_riesgo_b');
-          }
-
-          if ($entity->field_lesionado_ambulancia) {
-            $injured_item['field_lesionado_ambulancia'] = contract_export_export_get_field_value($entity->field_lesionado_ambulancia, 'list', 'field_lesionado_ambulancia');
-          }
-
-          if ($entity->field_hospital) {
-            $injured_item['field_hospital'] = contract_export_export_get_field_value($entity->field_hospital, 'user');
-          }
-
-          if ($entity->field_lesionado_domicilio) {
-            $injured_item['field_lesionado_domicilio'] = contract_export_export_get_field_value($entity->field_lesionado_domicilio, 'address');
-          }
-        // Fields End.
-
-        if ($vehicle_other_item) {
-          $injured_group[] = $injured_item;
-        }
-      }
-
-      $sinister['field_lesionado'] = $injured_group;
-    }
-    // Field collection End.
-
-    $sinisters[] = $sinister;
+    $sinister['field_vehiculo_tercero'] = $vehicle_others;
   }
 
-  return $sinisters;
+  if ($node->field_lesionado) {
+    $injured_field = $node->field_lesionado;
+    $injured_field = $injured_field[LANGUAGE_NONE];
+    $injured_group = [];
+
+    foreach($injured_field as $injured) {
+      $injured = $injured['value'];
+      $injured_item = [];
+      $entity = entity_load('field_collection_item', [$injured], [], TRUE);
+      $entity = $entity[$injured];
+
+      // Text Fields
+      if ($entity->field_lesionado_nombre) {
+        $injured_item['field_lesionado_nombre'] = contract_export_export_get_field_value($entity->field_lesionado_nombre, 'text');
+      }
+
+      if ($entity->field_lesionado_telefono) {
+        $injured_item['field_lesionado_telefono'] = contract_export_export_get_field_value($entity->field_lesionado_telefono, 'text');
+      }
+
+      if ($entity->field_lesionado_ambulancia_info) {
+        $injured_item['field_lesionado_ambulancia_info'] = contract_export_export_get_field_value($entity->field_lesionado_ambulancia_info, 'text');
+      }
+
+      if ($entity->field_lesionado_pase_medico) {
+        $injured_item['field_lesionado_pase_medico'] = contract_export_export_get_field_value($entity->field_lesionado_pase_medico, 'text');
+      }
+
+      if ($entity->field_lesionado_lesiones) {
+        $injured_item['field_lesionado_lesiones'] = contract_export_export_get_field_value($entity->field_lesionado_lesiones, 'text');
+      }
+      // Text Fields End.
+
+      //Fields.
+        if ($entity->field_lesionado_edad) {
+          $injured_item['field_lesionado_edad'] = contract_export_export_get_field_value($entity->field_lesionado_edad, 'number');
+        }
+
+
+        if ($entity->field_lesionado_riesgo_b) {
+          $injured_item['field_lesionado_riesgo_b'] = contract_export_export_get_field_value($entity->field_lesionado_riesgo_b, 'list', 'field_lesionado_riesgo_b');
+        }
+
+        if ($entity->field_lesionado_ambulancia) {
+          $injured_item['field_lesionado_ambulancia'] = contract_export_export_get_field_value($entity->field_lesionado_ambulancia, 'list', 'field_lesionado_ambulancia');
+        }
+
+        if ($entity->field_hospital) {
+          $injured_item['field_hospital'] = contract_export_export_get_field_value($entity->field_hospital, 'user');
+        }
+
+        if ($entity->field_lesionado_domicilio) {
+          $injured_item['field_lesionado_domicilio'] = contract_export_export_get_field_value($entity->field_lesionado_domicilio, 'address');
+        }
+      // Fields End.
+
+      if ($vehicle_other_item) {
+        $injured_group[] = $injured_item;
+      }
+    }
+
+    $sinister['field_lesionado'] = $injured_group;
+  }
+  // Field collection End.
+
+  return json_encode($sinister);
 }
 
 /**
@@ -1054,7 +1097,7 @@ function contract_export_export_get_field_value($value, $type, $field_name = '')
       }
       if ($uid) {
         $user = user_load($uid, TRUE);
-        $value = $user->mail;
+        $value = $user->name;
       }
       break;
     case 'geo':
@@ -1073,6 +1116,13 @@ function contract_export_export_get_field_value($value, $type, $field_name = '')
         'premise' => !empty($value['premise']) ? $value['premise'] : '',
       ];
       break;
+    case 'node':
+      $node = node_load($value['target_id'], NULL, TRUE);
+      $value = [
+        'title' => $node->title,
+        'site' => variable_get('site_name'),
+        'id' => $node->nid,
+      ];
   }
 
   return $value;
